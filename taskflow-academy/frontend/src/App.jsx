@@ -7,6 +7,8 @@ import AdminView from './components/AdminView';
 import StudentProfile from './components/StudentProfile';
 import TeacherProfile from './components/TeacherProfile';
 import RegistrationForm from './components/RegistrationForm';
+import ScheduleManager from './components/ScheduleManager';
+import { demoClasses } from './data/classData';
 // Data will be fetched from backend API
 
 function App() {
@@ -152,6 +154,9 @@ function App() {
 
   // Create Assignment State
   const [showCreateAssignmentModal, setShowCreateAssignmentModal] = useState(false);
+  
+  // Schedule Manager State
+  const [showScheduleManager, setShowScheduleManager] = useState(false);
 
   // Clear notification after 3 seconds
   useEffect(() => {
@@ -543,6 +548,15 @@ function App() {
                   Create Assignment
                 </button>
               )}
+              {role === 'admin' && (
+                <button
+                  onClick={() => setShowScheduleManager(true)}
+                  className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 transform hover:scale-105"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Schedule Manager
+                </button>
+              )}
 
               <button
                 onClick={toggleTheme}
@@ -576,7 +590,9 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {role === 'admin' ? (
+        {showScheduleManager ? (
+          <ScheduleManager user={activeUser} />
+        ) : role === 'admin' ? (
           <AdminView
             user={activeUser}
             onLogout={handleLogout}
@@ -629,7 +645,7 @@ function App() {
           isOpen={showProfile}
           onClose={() => setShowProfile(false)}
           students={studentList}
-          classes={[]}
+          classes={demoClasses}
           assignments={[]}
           submissions={[]}
           user={activeUser}
@@ -639,7 +655,7 @@ function App() {
           isOpen={showProfile}
           onClose={() => setShowProfile(false)}
           students={studentList}
-          classes={[]}
+          classes={demoClasses}
           assignments={[]}
           submissions={[]}
           user={activeUser}

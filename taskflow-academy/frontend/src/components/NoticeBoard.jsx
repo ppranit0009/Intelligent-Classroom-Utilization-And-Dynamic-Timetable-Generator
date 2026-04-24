@@ -1,53 +1,88 @@
-import React, { useState } from 'react';
-import { Bell, AlertCircle, Info, CheckCircle, Calendar, X, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bell, AlertCircle, Info, CheckCircle, Calendar, X, ChevronDown, ChevronUp, FileText, Download, MessageSquare, Eye, Pin, Clock, User, Tag, Filter, Search, Target, BookOpen, Briefcase, Tool } from 'lucide-react';
+import { demoNotices, getNoticesByAudience, noticeCategories, noticePriorities, getPinnedNotices, getRecentNotices } from '../data/noticeData';
 
-const NoticeBoard = ({ notices = [], userRole = 'student' }) => {
+const NoticeBoard = ({ userRole = 'student', userClass = null, showFullBoard = false }) => {
     const [expandedNotice, setExpandedNotice] = useState(null);
-    const [filter, setFilter] = useState('all'); // 'all', 'urgent', 'general', 'event'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedPriority, setSelectedPriority] = useState('all');
+    const [showFilters, setShowFilters] = useState(false);
+    
+    // Get notices based on user role
+    const [notices, setNotices] = useState([]);
+    
+    useEffect(() => {
+        const userNotices = getNoticesByAudience(userRole, userClass);
+        setNotices(userNotices);
+    }, [userRole, userClass]);
 
-    // Get icon and styling based on notice type
-    const getNoticeStyle = (type) => {
-        switch (type) {
-            case 'urgent':
-                return {
-                    icon: AlertCircle,
-                    bgColor: 'bg-red-50 dark:bg-red-900/20',
-                    borderColor: 'border-red-200 dark:border-red-800',
-                    iconColor: 'text-red-600 dark:text-red-400',
-                    badgeColor: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-                };
-            case 'event':
-                return {
-                    icon: Calendar,
-                    bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-                    borderColor: 'border-purple-200 dark:border-purple-800',
-                    iconColor: 'text-purple-600 dark:text-purple-400',
-                    badgeColor: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'
-                };
-            case 'success':
-                return {
-                    icon: CheckCircle,
-                    bgColor: 'bg-green-50 dark:bg-green-900/20',
-                    borderColor: 'border-green-200 dark:border-green-800',
-                    iconColor: 'text-green-600 dark:text-green-400',
-                    badgeColor: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
-                };
-            default:
-                return {
-                    icon: Info,
-                    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-                    borderColor: 'border-blue-200 dark:border-blue-800',
-                    iconColor: 'text-blue-600 dark:text-blue-400',
-                    badgeColor: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
-                };
-        }
+    // Get icon and styling based on notice priority
+    const getPriorityStyle = (priority) => {
+        const priorityConfig = noticePriorities.find(p => p.id === priority) || noticePriorities[3];
+        return {
+            bgColor: priority === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
+                    priority === 'high' ? 'bg-orange-50 dark:bg-orange-900/20' :
+                    priority === 'medium' ? 'bg-yellow-50 dark:bg-yellow-900/20' :
+                    'bg-green-50 dark:bg-green-900/20',
+            borderColor: priority === 'urgent' ? 'border-red-200 dark:border-red-800' :
+                        priority === 'high' ? 'border-orange-200 dark:border-orange-800' :
+                        priority === 'medium' ? 'border-yellow-200 dark:border-yellow-800' :
+                        'border-green-200 dark:border-green-800',
+            iconColor: priority === 'urgent' ? 'text-red-600 dark:text-red-400' :
+                        priority === 'high' ? 'text-orange-600 dark:text-orange-400' :
+                        priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-green-600 dark:text-green-400',
+            badgeColor: priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
+                        priority === 'high' ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300' :
+                        priority === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300' :
+                        'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+            icon: priority === 'urgent' ? AlertCircle :
+                  priority === 'high' ? AlertCircle :
+                  priority === 'medium' ? Bell :
+                  Info
+        };
     };
 
-    // Filter notices based on selected filter and user role
+    // Get category styling
+    const getCategoryStyle = (categoryId) => {
+        const category = noticeCategories.find(c => c.id === categoryId) || noticeCategories[8];
+        return {
+            name: category.name,
+            color: category.color,
+            icon: category.id === 'academic' ? FileText :
+                  category.id === 'events' ? Calendar :
+                  category.id === 'examinations' ? FileText :
+                  category.id === 'holidays' ? Calendar :
+                  category.id === 'sports' ? Target :
+                  category.id === 'placements' ? Briefcase :
+                  category.id === 'library' ? BookOpen :
+                  category.id === 'maintenance' ? Tool :
+                  Bell
+        };
+    };
+
+    // Filter notices based on multiple criteria
     const filteredNotices = notices.filter(notice => {
-        const roleMatch = notice.targetRole === 'all' || notice.targetRole === userRole;
-        const typeMatch = filter === 'all' || notice.type === filter;
-        return roleMatch && typeMatch;
+        const matchesSearch = searchQuery === '' || 
+            notice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            notice.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            notice.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        const matchesCategory = selectedCategory === 'all' || notice.category === selectedCategory;
+        const matchesPriority = selectedPriority === 'all' || notice.priority === selectedPriority;
+        
+        return matchesSearch && matchesCategory && matchesPriority;
+    }).sort((a, b) => {
+        // Sort pinned notices first, then by priority, then by date
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        
+        const priorityOrder = { urgent: 1, high: 2, medium: 3, low: 4 };
+        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        return new Date(b.postedDate) - new Date(a.postedDate);
     });
 
     const toggleExpand = (noticeId) => {
@@ -82,26 +117,59 @@ const NoticeBoard = ({ notices = [], userRole = 'student' }) => {
                 </div>
             </div>
 
-            {/* Filter Tabs */}
+            {/* Search and Filter Bar */}
             <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
-                <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto scrollbar-hide">
-                    {['all', 'urgent', 'general', 'event', 'success'].map((filterType) => (
-                        <button
-                            key={filterType}
-                            onClick={() => setFilter(filterType)}
-                            className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold text-xs sm:text-base transition-all duration-200 whitespace-nowrap transform hover:scale-105 ${filter === filterType
-                                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 border-2 border-indigo-500'
-                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-500'
-                                }`}
-                        >
-                            {filterType === 'all' && '📋 All'}
-                            {filterType === 'urgent' && '🚨 Urgent'}
-                            {filterType === 'general' && '📢 General'}
-                            {filterType === 'event' && '📅 Event'}
-                            {filterType === 'success' && '✅ Success'}
-                        </button>
-                    ))}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Search Bar */}
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search notices..."
+                            className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                    </div>
+                    
+                    {/* Filter Toggle */}
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                    >
+                        <Filter className="w-4 h-4" />
+                        Filters
+                    </button>
                 </div>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {/* Category Filter */}
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        >
+                            <option value="all">All Categories</option>
+                            {noticeCategories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+
+                        {/* Priority Filter */}
+                        <select
+                            value={selectedPriority}
+                            onChange={(e) => setSelectedPriority(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        >
+                            <option value="all">All Priorities</option>
+                            {noticePriorities.map(pri => (
+                                <option key={pri.id} value={pri.id}>{pri.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* Notices List */}
@@ -121,79 +189,171 @@ const NoticeBoard = ({ notices = [], userRole = 'student' }) => {
                     </div>
                 ) : (
                     filteredNotices.map((notice) => {
-                        const style = getNoticeStyle(notice.type);
-                        const Icon = style.icon;
+                        const priorityStyle = getPriorityStyle(notice.priority);
+                        const categoryStyle = getCategoryStyle(notice.category);
+                        const Icon = priorityStyle.icon;
+                        const CategoryIcon = categoryStyle.icon;
                         const isExpanded = expandedNotice === notice.id;
 
                         return (
                             <div
                                 key={notice.id}
-                                className={`${style.bgColor} ${style.borderColor} border-2 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform relative`}
+                                className={`${priorityStyle.bgColor} ${priorityStyle.borderColor} border-2 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform relative`}
                             >
                                 {/* Accent Border */}
-                                <div className={`absolute top-0 left-0 right-0 h-1 ${style.iconColor.replace('text', 'bg')} opacity-80`}></div>
+                                <div className={`absolute top-0 left-0 right-0 h-1 ${priorityStyle.iconColor.replace('text', 'bg')} opacity-80`}></div>
+                                
+                                {/* Pinned Indicator */}
+                                {notice.isPinned && (
+                                    <div className="absolute top-2 right-2">
+                                        <Pin className="w-4 h-4 text-red-500" />
+                                    </div>
+                                )}
                                 
                                 <div className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-start space-x-3 sm:space-x-5 flex-1">
-                                            <div className={`${style.iconColor} mt-1 flex-shrink-0`}>
-                                                <div className={`p-3 sm:p-4 ${style.bgColor} rounded-xl border-2 ${style.borderColor}`}>
+                                            <div className={`${priorityStyle.iconColor} mt-1 flex-shrink-0`}>
+                                                <div className={`p-3 sm:p-4 ${priorityStyle.bgColor} rounded-xl border-2 ${priorityStyle.borderColor}`}>
                                                     <Icon className="w-5 h-5 sm:w-7 sm:h-7" />
                                                 </div>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-3 sm:mb-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-4 mb-3 sm:mb-4">
                                                     <h3 className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl leading-tight">
                                                         {notice.title}
                                                     </h3>
-                                                    <span className={`${style.badgeColor} px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wide shadow-sm self-start sm:self-auto`}>
-                                                        {notice.type}
-                                                    </span>
+                                                    <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+                                                        <span className={`${priorityStyle.badgeColor} px-2 sm:px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm`}>
+                                                            {notice.priority}
+                                                        </span>
+                                                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 sm:px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                                            <CategoryIcon className="w-3 h-3" />
+                                                            {categoryStyle.name}
+                                                        </span>
+                                                    </div>
                                                 </div>
+                                                
                                                 <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-3 sm:mb-4">
-                                                    {notice.shortDescription}
+                                                    {isExpanded ? notice.content : notice.content.substring(0, 150) + (notice.content.length > 150 ? '...' : '')}
                                                 </p>
-                                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-8 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+
+                                                {/* Attachments */}
+                                                {notice.attachments && notice.attachments.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 mb-3">
+                                                        {notice.attachments.map((attachment, index) => (
+                                                            <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs">
+                                                                <FileText className="w-3 h-3 text-slate-500" />
+                                                                <span className="text-slate-700 dark:text-slate-300">{attachment.name}</span>
+                                                                <span className="text-slate-500">({Math.round(attachment.size / 1024)}KB)</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Tags */}
+                                                {notice.tags && notice.tags.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mb-3">
+                                                        {notice.tags.map((tag, index) => (
+                                                            <span key={index} className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded text-xs">
+                                                                #{tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                                                     <span className="flex items-center font-medium">
                                                         <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                                                        {notice.date}
+                                                        {new Date(notice.postedDate).toLocaleDateString()}
                                                     </span>
-                                                    {notice.postedBy && (
+                                                    {notice.expiryDate && (
                                                         <span className="flex items-center font-medium">
-                                                            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-slate-400 rounded-full mr-2"></div>
-                                                            Posted by: {notice.postedBy}
+                                                            <Clock className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                                            Expires: {new Date(notice.expiryDate).toLocaleDateString()}
                                                         </span>
                                                     )}
+                                                    <span className="flex items-center font-medium">
+                                                        <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                                        {notice.authorName}
+                                                    </span>
+                                                    <span className="flex items-center font-medium">
+                                                        <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                                        {notice.viewCount} views
+                                                    </span>
                                                 </div>
+
+                                                {/* Comments */}
+                                                {notice.comments && notice.comments.length > 0 && (
+                                                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                                                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                                            <MessageSquare className="w-3 h-3" />
+                                                            {notice.comments.length} comment{notice.comments.length !== 1 ? 's' : ''}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        {notice.fullDescription && (
-                                            <button
-                                                onClick={() => toggleExpand(notice.id)}
-                                                className={`${style.iconColor} hover:opacity-70 transition-all duration-200 ml-4 sm:ml-6 flex-shrink-0 p-2 sm:p-3 rounded-lg hover:bg-white/50 dark:hover:bg-slate-800/50`}
-                                            >
-                                                {isExpanded ? (
-                                                    <ChevronUp className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                ) : (
-                                                    <ChevronDown className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                )}
-                                            </button>
-                                        )}
+                                        
+                                        <button
+                                            onClick={() => toggleExpand(notice.id)}
+                                            className={`${priorityStyle.iconColor} hover:opacity-70 transition-all duration-200 ml-4 sm:ml-6 flex-shrink-0 p-2 sm:p-3 rounded-lg hover:bg-white/50 dark:hover:bg-slate-800/50`}
+                                        >
+                                            {isExpanded ? (
+                                                <ChevronUp className="w-5 h-5 sm:w-7 sm:h-7" />
+                                            ) : (
+                                                <ChevronDown className="w-5 h-5 sm:w-7 sm:h-7" />
+                                            )}
+                                        </button>
                                     </div>
 
                                     {/* Expanded Content */}
-                                    {isExpanded && notice.fullDescription && (
+                                    {isExpanded && (
                                         <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700 animate-in slide-in-from-top-2 fade-in duration-300">
-                                            <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                                                {notice.fullDescription}
+                                            <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-4">
+                                                {notice.content}
                                             </p>
-                                            {notice.actionLink && (
-                                                <a
-                                                    href={notice.actionLink}
-                                                    className={`inline-block mt-3 sm:mt-5 px-4 sm:px-7 py-2 sm:py-4 rounded-xl ${style.iconColor} bg-white dark:bg-slate-800 border-2 ${style.borderColor} font-bold text-sm sm:text-base hover:shadow-lg transition-all duration-200 transform hover:scale-105`}
-                                                >
-                                                    {notice.actionText || 'Learn More'}
-                                                </a>
+
+                                            {/* Download Attachments */}
+                                            {notice.attachments && notice.attachments.length > 0 && (
+                                                <div className="mb-4">
+                                                    <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Attachments:</h4>
+                                                    <div className="space-y-2">
+                                                        {notice.attachments.map((attachment, index) => (
+                                                            <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                                                                <div className="flex items-center gap-3">
+                                                                    <FileText className="w-5 h-5 text-slate-500" />
+                                                                    <div>
+                                                                        <p className="text-sm font-medium text-slate-900 dark:text-white">{attachment.name}</p>
+                                                                        <p className="text-xs text-slate-500">{Math.round(attachment.size / 1024)}KB</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 flex items-center gap-1">
+                                                                    <Download className="w-3 h-3" />
+                                                                    Download
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Comments Section */}
+                                            {notice.comments && notice.comments.length > 0 && (
+                                                <div className="mb-4">
+                                                    <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Comments:</h4>
+                                                    <div className="space-y-3">
+                                                        {notice.comments.map((comment) => (
+                                                            <div key={comment.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="font-medium text-sm text-slate-900 dark:text-white">{comment.authorName}</span>
+                                                                    <span className="text-xs text-slate-500">{new Date(comment.date).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <p className="text-sm text-slate-700 dark:text-slate-300">{comment.content}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )}

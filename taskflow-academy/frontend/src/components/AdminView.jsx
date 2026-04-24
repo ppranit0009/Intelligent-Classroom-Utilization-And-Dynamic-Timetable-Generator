@@ -9,6 +9,8 @@ import {
     Globe, Lock, Mail, Phone, MapPin, Star, TrendingDown, ArrowUp, ArrowDown,
     RefreshCw, Save, Printer, Share2, Link2, Wifi, Battery, Cloud, Server
 } from 'lucide-react';
+import NoticeBoardSimple from './NoticeBoardSimple';
+import NoticeManagement from './NoticeManagement';
 
 const AdminView = ({ user, onLogout }) => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -63,6 +65,8 @@ const AdminView = ({ user, onLogout }) => {
         { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
         { id: 'users', label: 'User Management', icon: Users },
         { id: 'classes', label: 'Class Management', icon: School },
+        { id: 'notices', label: 'Notices', icon: Bell },
+        { id: 'noticeManagement', label: 'Notice Management', icon: Edit },
         { id: 'reports', label: 'Reports', icon: FileText },
         { id: 'logs', label: 'Activity Logs', icon: Activity }
     ];
@@ -789,6 +793,29 @@ const AdminView = ({ user, onLogout }) => {
                                 </div>
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            {activeTab === 'notices' && (
+                    <motion.div
+                        key="notices"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <NoticeBoardSimple userRole="admin" />
+                    </motion.div>
+                )}
+
+                {activeTab === 'noticeManagement' && (
+                    <motion.div
+                        key="noticeManagement"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <NoticeManagement />
                     </motion.div>
                 )}
             </AnimatePresence>

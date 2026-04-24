@@ -4,7 +4,9 @@ import { Plus, Search, FileText, CheckCircle, Clock, BarChart3, BrainCircuit, Sp
 import TeacherCommunications from './teacher-comms/TeacherCommunications';
 import CreateAssignmentModal from './CreateAssignmentModal';
 import AttendanceManagement from './AttendanceManagement';
-import NoticeBoard from './NoticeBoard';
+import NoticeBoardSimple from './NoticeBoardSimple';
+import ClassAnalyticsDashboard from './ClassAnalyticsDashboard';
+import { getClassById, getClassPerformanceMetrics, getUpcomingAssessments, getClassAnalytics } from '../data/classData';
 // Data will be fetched from backend API
 
 const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [], notices = [], showCreateModal, setShowCreateModal }) => {
@@ -179,6 +181,19 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
             <Calendar className="w-5 h-5" />
             <span>Attendance</span>
           </button>
+          <button
+            onClick={() => setActiveView('class-analytics')}
+            className={`
+              flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all
+              ${activeView === 'class-analytics'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }
+            `}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Class Analytics</span>
+          </button>
         </div>
       </div>
 
@@ -201,6 +216,17 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
               subjects={subjects}
               onUpdateAttendance={onUpdateAttendance}
             />
+          </motion.div>
+        ) : activeView === 'class-analytics' ? (
+          <motion.div
+            key="class-analytics"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <ClassAnalyticsDashboard />
           </motion.div>
         ) : (
           <motion.div
@@ -255,9 +281,9 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               {/* Main Content: Review Queue */}
-              <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden max-h-[600px]">
+              <div className="xl:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                     {showChart ? 'Analytics Dashboard' : 'Review Queue'}
@@ -378,7 +404,7 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
                       </div>
 
                       {/* Stats Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <div className="bg-white/80 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
                           <div className="flex items-center justify-between">
                             <div>
@@ -449,7 +475,7 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
                         {/* Submission Trend */}
                         <div className="bg-white/80 dark:bg-slate-800/80 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
                           <h4 className="font-semibold text-slate-700 dark:text-slate-200 mb-4">Submission Trend</h4>
-                          <div className="h-48 flex items-center justify-center">
+                          <div className="h-64 flex items-center justify-center">
                             <div className="w-full">
                               <div className="flex justify-between text-xs text-slate-400 mb-2 px-1">
                                 <span>Mon</span>
@@ -477,7 +503,7 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
                         {/* Assignment Distribution */}
                         <div className="bg-white/80 dark:bg-slate-800/80 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
                           <h4 className="font-semibold text-slate-700 dark:text-slate-200 mb-4">Assignment Distribution</h4>
-                          <div className="h-48 flex items-center justify-center">
+                          <div className="h-64 flex items-center justify-center">
                             <div className="relative w-32 h-32">
                               <div className="absolute inset-0 rounded-full border-8 border-indigo-100 dark:border-indigo-900/30"></div>
                               <div className="absolute inset-0 rounded-full border-8 border-indigo-200 dark:border-indigo-800/50" style={{ clipPath: 'inset(0 50% 0 0)' }}></div>
@@ -511,7 +537,7 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
                     </div>
                   </div>
                 ) : (
-                  <div className="p-6 space-y-6">
+                  <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
                     {filteredQueue.length > 0 ? (
                       filteredQueue.map((item, index) => (
                         <div
@@ -705,7 +731,7 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
 
             {/* Notice Board */}
             <div className="mt-8">
-              <NoticeBoard notices={notices} userRole="teacher" />
+              <NoticeBoardSimple userRole="teacher" />
             </div>
 
             {/* Create Assignment Modal */}

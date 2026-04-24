@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Clock, CheckCircle, AlertCircle, Upload, Download, MessageSquare, ThumbsUp, Mail, Phone, Linkedin, X, User, BookOpen, Plus, Search, Users, GraduationCap, ArrowRight } from 'lucide-react';
+import { Plus, Search, FileText, CheckCircle, Clock, BarChart3, BrainCircuit, Sparkles, X, ChevronRight, Linkedin, MessageSquare, Calendar, BookOpen, User, GraduationCap, AlertCircle, Users, LogOut, Moon, Sun, Eye, Settings, Home, Bell } from 'lucide-react';
 import FocusZone from './FocusZone';
 import StudentProfile from './StudentProfile';
 import AttendanceMarker from './AttendanceMarker';
 import AssignmentDashboard from './AssignmentDashboard';
-import NoticeBoard from './NoticeBoard';
+import NoticeBoardSimple from './NoticeBoardSimple';
 import JoinClassPage from './JoinClassPage';
 // Data will be fetched from backend API
 
@@ -77,6 +77,7 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
     { id: 'overview', label: 'Overview', icon: FileText },
     { id: 'joinClass', label: 'Join Class', icon: Plus },
     { id: 'myClasses', label: 'My Classes', icon: BookOpen },
+    { id: 'notices', label: 'Notices', icon: Bell },
     ...(enrolledClasses.length > 0 ? [
       { id: 'assignments', label: 'Assignments', icon: FileText },
       { id: 'attendance', label: 'Attendance', icon: Clock }
@@ -774,6 +775,10 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
           attendanceRecords={attendanceRecords || []}
           subjects={subjects}
         />
+      )}
+
+      {activeTab === 'notices' && (
+        <NoticeBoardSimple userRole="student" />
       )}
 
         </div>

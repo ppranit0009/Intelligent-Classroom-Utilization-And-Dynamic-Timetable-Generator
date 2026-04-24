@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest"
+    "test": "jest",
+    "seed": "node src/seed/seedDatabase.js",
+    "seed:fake": "node -e \"require('./src/seed/seedDatabase').seedDatabase()\""
   },
   "dependencies": {
     "express": "^4.18.2",

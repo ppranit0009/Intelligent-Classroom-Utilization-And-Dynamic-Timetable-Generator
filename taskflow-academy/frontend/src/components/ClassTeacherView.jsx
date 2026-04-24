@@ -7,8 +7,10 @@ import {
 } from 'lucide-react';
 import AttendanceManagement from './AttendanceManagement';
 import TeacherCommunications from './teacher-comms/TeacherCommunications';
-import NoticeBoard from './NoticeBoard';
+import NoticeBoardSimple from './NoticeBoardSimple';
 import TeacherCommunityGroup from './TeacherCommunityGroup';
+import ClassAnalyticsDashboard from './ClassAnalyticsDashboard';
+import { getClassById, getClassPerformanceMetrics, getUpcomingAssessments } from '../data/classData';
 
 const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecords, assignments, submissions, onUpdateAttendance, classes, notices = [] }) => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -859,85 +861,9 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                         exit="exit"
                         transition={{ duration: 0.3 }}
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <PieChart className="w-5 h-5 text-purple-500" />
-                                    Performance Distribution
-                                </h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-slate-600 dark:text-slate-400">Ahead ({progressStats.ahead})</span>
-                                        <div className="flex-1 mx-4 bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                                            <div
-                                                className="h-3 rounded-full bg-emerald-500"
-                                                style={{ width: `${(progressStats.ahead / classStudents.length) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {((progressStats.ahead / classStudents.length) * 100).toFixed(0)}%
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-slate-600 dark:text-slate-400">On Track ({progressStats.onTrack})</span>
-                                        <div className="flex-1 mx-4 bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                                            <div
-                                                className="h-3 rounded-full bg-blue-500"
-                                                style={{ width: `${(progressStats.onTrack / classStudents.length) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {((progressStats.onTrack / classStudents.length) * 100).toFixed(0)}%
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-slate-600 dark:text-slate-400">At Risk ({progressStats.atRisk})</span>
-                                        <div className="flex-1 mx-4 bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                                            <div
-                                                className="h-3 rounded-full bg-red-500"
-                                                style={{ width: `${(progressStats.atRisk / classStudents.length) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {((progressStats.atRisk / classStudents.length) * 100).toFixed(0)}%
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <Award className="w-5 h-5 text-purple-500" />
-                                    Top Performers
-                                </h3>
-                                <div className="space-y-3">
-                                    {classStudents
-                                        .sort((a, b) => b.progress - a.progress)
-                                        .slice(0, 5)
-                                        .map((student, index) => (
-                                            <div key={student.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                                    index === 1 ? 'bg-slate-300 text-slate-700' :
-                                                        index === 2 ? 'bg-orange-400 text-orange-900' :
-                                                            'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                                                    }`}>
-                                                    {index + 1}
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
-                                                    {student.avatar}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{student.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Progress: {student.progress}%</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        </div>
+                        <ClassAnalyticsDashboard />
                     </motion.div>
                 )}
-            </AnimatePresence>
 
             {/* Message Modal */}
             {showMessageModal && messageRecipient && (
@@ -947,7 +873,10 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"><Send className="w-6 h-6" /></div>
-                                    <div><h3 className="text-xl font-bold">Send Message</h3><p className="text-sm text-blue-100">To: {messageRecipient.name}</p></div>
+                                    <div>
+                                        <h3 className="text-xl font-bold">Send Message</h3>
+                                        <p className="text-sm text-blue-100">To: {messageRecipient.name}</p>
+                                    </div>
                                 </div>
                                 <button onClick={handleCloseMessage} className="p-2 hover:bg-white/20 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
                             </div>
@@ -956,7 +885,10 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                             <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold">{messageRecipient.name.split(' ').map(n => n[0]).join('')}</div>
-                                    <div><p className="font-semibold text-slate-900 dark:text-white">{messageRecipient.name}</p><p className="text-sm text-slate-600 dark:text-slate-400">{subjects.find(s => s.id === messageRecipient.subjects[0])?.name || 'Subject Teacher'}</p></div>
+                                    <div>
+                                        <p className="font-semibold text-slate-900 dark:text-white">{messageRecipient.name}</p>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">{subjects.find(s => s.id === messageRecipient.subjects[0])?.name || 'Subject Teacher'}</p>
+                                    </div>
                                 </div>
                             </div>
                             <div>
@@ -986,11 +918,21 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                         </div>
                         <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-b-2xl flex gap-3 justify-end">
                             <button onClick={handleCloseMessage} className="px-6 py-2.5 rounded-lg font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors border border-slate-300 dark:border-slate-600">Cancel</button>
-                            <button onClick={handleSendMessage} disabled={!messageData.subject || !messageData.message} className="px-6 py-2.5 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"><Send className="w-4 h-4" />Send Message</button>
+                            <button onClick={handleSendMessage} disabled={!messageData.subject || !messageData.message} className="px-6 py-2.5 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                <Send className="w-4 h-4" />
+                                Send Message
+                            </button>
                         </div>
                     </motion.div>
                 </div>
             )}
+            
+            </AnimatePresence>
+            
+            {/* Notice Board */}
+            <div className="mt-8">
+                <NoticeBoardSimple userRole="classTeacher" />
+            </div>
         </div>
     );
 };
