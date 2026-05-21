@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, CheckCircle, Clock, BarChart3, BrainCircuit, Sparkles, X, ChevronRight, Linkedin, MessageSquare, Calendar, BookOpen, User, GraduationCap, AlertCircle, Users, LogOut, Moon, Sun, Eye, Settings, Home, Bell } from 'lucide-react';
+import { Plus, Search, FileText, CheckCircle, Clock, BarChart3, BrainCircuit, Sparkles, X, ChevronRight, Linkedin, MessageSquare, Calendar, BookOpen, User, GraduationCap, AlertCircle, Users, LogOut, Moon, Sun, Eye, Settings, Home, Bell, AlertTriangle, Zap } from 'lucide-react';
 import FocusZone from './FocusZone';
 import StudentProfile from './StudentProfile';
 import AttendanceMarker from './AttendanceMarker';
 import AssignmentDashboard from './AssignmentDashboard';
 import NoticeBoardSimple from './NoticeBoardSimple';
 import JoinClassPage from './JoinClassPage';
+import EmergencyTimetable, { EMERGENCY_TIMETABLE_KEY } from './EmergencyTimetable';
 // Data will be fetched from backend API
 
 const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [], notices = [] }) => {
@@ -19,10 +20,11 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
   
   // Class joining state
   const [activeTab, setActiveTab] = useState(() => {
-  const saved = localStorage.getItem('taskflow-studentActiveTab');
-  return saved || 'overview';
-});
+    const saved = localStorage.getItem('taskflow-studentActiveTab');
+    return saved || 'overview';
+  });
   const [showJoinClassPage, setShowJoinClassPage] = useState(false);
+  const [hasEmergencyTimetable, setHasEmergencyTimetable] = useState(false);
   const [joinClassCode, setJoinClassCode] = useState('');
   const [enrolledClasses, setEnrolledClasses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,11 +75,23 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
     }
   ]);
   
+  // Poll localStorage for emergency timetable every 5 seconds
+  useEffect(() => {
+    const check = () => {
+      const stored = localStorage.getItem(EMERGENCY_TIMETABLE_KEY);
+      setHasEmergencyTimetable(!!stored);
+    };
+    check();
+    const interval = setInterval(check, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FileText },
     { id: 'joinClass', label: 'Join Class', icon: Plus },
     { id: 'myClasses', label: 'My Classes', icon: BookOpen },
     { id: 'notices', label: 'Notices', icon: Bell },
+    { id: 'emergencyTimetable', label: 'Emergency Timetable', icon: AlertTriangle, emergency: true },
     ...(enrolledClasses.length > 0 ? [
       { id: 'assignments', label: 'Assignments', icon: FileText },
       { id: 'attendance', label: 'Attendance', icon: Clock }
@@ -448,7 +462,6 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
                   key={tab.id}
                   onClick={() => {
                     if (tab.id === 'joinClass') {
-                      console.log('Setting showJoinClassPage to true');
                       setShowJoinClassPage(true);
                       setActiveTab('joinClass');
                     } else {
@@ -457,15 +470,22 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
                     }
                   }}
                   className={`
-                    flex items-center gap-1.5 lg:gap-2 px-2 lg:px-4 py-2 lg:py-3 rounded-lg font-medium text-xs lg:text-sm transition-all whitespace-nowrap
+                    relative flex items-center gap-1.5 lg:gap-2 px-2 lg:px-4 py-2 lg:py-3 rounded-lg font-medium text-xs lg:text-sm transition-all whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? tab.emergency
+                        ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
+                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
+                      : tab.emergency && hasEmergencyTimetable
+                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 animate-pulse'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }
                   `}
                 >
                   <tab.icon className="w-4 h-4 lg:w-5 lg:h-5" />
                   <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.emergency && hasEmergencyTimetable && activeTab !== tab.id && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                  )}
                 </button>
               ))}
             </div>
@@ -779,6 +799,37 @@ const StudentView = ({ user, attendanceRecords, subjects = [], assignments = [],
 
       {activeTab === 'notices' && (
         <NoticeBoardSimple userRole="student" />
+      )}
+
+      {activeTab === 'emergencyTimetable' && (
+        <div className="space-y-4">
+          {/* Emergency Timetable Header */}
+          <div className={`rounded-2xl p-6 text-white shadow-xl ${
+            hasEmergencyTimetable
+              ? 'bg-gradient-to-r from-red-600 to-orange-600'
+              : 'bg-gradient-to-r from-slate-600 to-slate-700'
+          }`}>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                {hasEmergencyTimetable
+                  ? <AlertTriangle className="w-8 h-8 animate-pulse" />
+                  : <Zap className="w-8 h-8" />
+                }
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Emergency Timetable</h2>
+                <p className={`text-sm mt-1 ${
+                  hasEmergencyTimetable ? 'text-red-100' : 'text-slate-300'
+                }`}>
+                  {hasEmergencyTimetable
+                    ? '🚨 An active emergency schedule has been published by the AI Agent. Review your updated classes below.'
+                    : 'All teachers are present. Your regular timetable is in effect. This section will auto-update if any teacher is absent.'}
+                </p>
+              </div>
+            </div>
+          </div>
+          <EmergencyTimetable userRole="student" />
+        </div>
       )}
 
         </div>

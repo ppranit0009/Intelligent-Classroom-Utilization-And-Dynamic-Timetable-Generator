@@ -6,6 +6,7 @@ import CreateAssignmentModal from './CreateAssignmentModal';
 import AttendanceManagement from './AttendanceManagement';
 import NoticeBoardSimple from './NoticeBoardSimple';
 import ClassAnalyticsDashboard from './ClassAnalyticsDashboard';
+import TeacherLeaveManagement from './TeacherLeaveManagement';
 import { getClassById, getClassPerformanceMetrics, getUpcomingAssessments, getClassAnalytics } from '../data/classData';
 // Data will be fetched from backend API
 
@@ -194,12 +195,25 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
             <BarChart3 className="w-5 h-5" />
             <span>Class Analytics</span>
           </button>
+          <button
+            onClick={() => setActiveView('leave')}
+            className={`
+              flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all
+              ${activeView === 'leave'
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }
+            `}
+          >
+            <Calendar className="w-5 h-5" />
+            <span>My Leave</span>
+          </button>
         </div>
       </div>
 
       <AnimatePresence mode="wait">
         {activeView === 'communications' ? (
-          <TeacherCommunications students={students} />
+          <TeacherCommunications students={[]} />
         ) : activeView === 'attendance' ? (
           <motion.div
             key="attendance"
@@ -211,8 +225,8 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
           >
             <AttendanceManagement
               attendanceRecords={attendanceRecords || []}
-              students={students}
-              classes={classes}
+              students={[]}
+              classes={[]}
               subjects={subjects}
               onUpdateAttendance={onUpdateAttendance}
             />
@@ -227,6 +241,24 @@ const TeacherView = ({ user, attendanceRecords, onUpdateAttendance, subjects = [
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
             <ClassAnalyticsDashboard />
+          </motion.div>
+        ) : activeView === 'leave' ? (
+          <motion.div
+            key="leave"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <TeacherLeaveManagement
+              user={user}
+              teachers={[]}
+              subjects={subjects}
+              onLeaveSubmit={(leaveRequest) => {
+                console.log('Leave submitted by subject teacher:', leaveRequest);
+              }}
+            />
           </motion.div>
         ) : (
           <motion.div

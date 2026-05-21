@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import NoticeBoardSimple from './NoticeBoardSimple';
 import NoticeManagement from './NoticeManagement';
+import LectureCancellationNotification from './LectureCancellationNotification';
 
 const AdminView = ({ user, onLogout }) => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,6 +21,8 @@ const AdminView = ({ user, onLogout }) => {
     const [filterRole, setFilterRole] = useState('all');
     const [showCreateClassModal, setShowCreateClassModal] = useState(false);
     const [notification, setNotification] = useState(null);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
 
     // Mock data (in real app, this would come from backend)
     const [users, setUsers] = useState([
@@ -108,6 +111,44 @@ const AdminView = ({ user, onLogout }) => {
         setNotification({ type: 'info', message: 'Create Class modal opened' });
     };
 
+    // Notification handling functions
+    const handleMarkNotificationAsRead = (notificationId) => {
+        setNotifications(notifications.map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+        ));
+    };
+
+    const handleDismissNotification = (notificationId) => {
+        setNotifications(notifications.filter(n => n.id !== notificationId));
+    };
+
+    // Simulate receiving lecture cancellation notifications from teachers
+    useEffect(() => {
+        // Mock: Add a sample lecture cancellation notification
+        const sampleNotification = {
+            id: 'admin-notif-1',
+            type: 'cancellation',
+            title: 'Lecture Cancelled - Mathematics I',
+            message: 'Dr. Sarah Johnson has cancelled Mathematics I lecture scheduled for today at 10:00 AM due to medical emergency.',
+            priority: 'high',
+            timestamp: new Date().toISOString(),
+            read: false,
+            details: {
+                subject: 'Mathematics I',
+                teacher: 'Dr. Sarah Johnson',
+                date: new Date().toISOString().split('T')[0],
+                time: '10:00 AM',
+                reason: 'Medical Emergency',
+                alternativeArrangements: 'Lecture will be rescheduled to tomorrow at same time. Assignment will be posted online.'
+            }
+        };
+        
+        // Add notification if it doesn't exist
+        if (!notifications.find(n => n.id === sampleNotification.id)) {
+            setNotifications([sampleNotification]);
+        }
+    }, []); // Empty dependency array means this runs only once
+
     const handleEditClass = (classId) => {
         setNotification({ type: 'info', message: `Editing class: ${classId}` });
     };
@@ -166,6 +207,17 @@ const AdminView = ({ user, onLogout }) => {
                         <p className="text-purple-200 text-sm mt-1">Welcome, {user?.name || 'Administrator'}</p>
                     </div>
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setShowNotifications(true)}
+                            className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center hover:bg-white/30 transition-colors"
+                        >
+                            <Bell className="w-6 h-6" />
+                            {notifications.filter(n => !n.read).length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                    {notifications.filter(n => !n.read).length}
+                                </span>
+                            )}
+                        </button>
                         <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
                             <Users className="w-8 h-8 mx-auto mb-2" />
                             <p className="text-xl font-bold">{systemStats.totalUsers}</p>
@@ -819,6 +871,15 @@ const AdminView = ({ user, onLogout }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+        
+        {/* Notification Component */}
+        <LectureCancellationNotification
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            notifications={notifications}
+            onMarkAsRead={handleMarkNotificationAsRead}
+            onDismiss={handleDismissNotification}
+        />
         </div>
     );
 };

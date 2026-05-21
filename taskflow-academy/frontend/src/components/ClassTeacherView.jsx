@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, BookOpen, Calendar, TrendingUp, Award, AlertCircle,
     CheckCircle, Clock, BarChart3, PieChart, Activity, UserCheck,
-    GraduationCap, ClipboardList, Target, Zap, Eye, FileText, MessageSquare, Send, X, Plus
+    GraduationCap, ClipboardList, Target, Zap, Eye, FileText, MessageSquare, Send, X, Plus, Bell, AlertTriangle
 } from 'lucide-react';
 import AttendanceManagement from './AttendanceManagement';
 import TeacherCommunications from './teacher-comms/TeacherCommunications';
 import NoticeBoardSimple from './NoticeBoardSimple';
 import TeacherCommunityGroup from './TeacherCommunityGroup';
 import ClassAnalyticsDashboard from './ClassAnalyticsDashboard';
+import LectureCancellationNotification from './LectureCancellationNotification';
+import TeacherLeaveManagement from './TeacherLeaveManagement';
 import { getClassById, getClassPerformanceMetrics, getUpcomingAssessments } from '../data/classData';
 
 const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecords, assignments, submissions, onUpdateAttendance, classes, notices = [] }) => {
@@ -33,6 +35,22 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
         classCode: ''
     });
     const [createdClasses, setCreatedClasses] = useState([]);
+
+    // Lecture Cancellation State
+    const [showLectureCancellationModal, setShowLectureCancellationModal] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [lectureCancellationData, setLectureCancellationData] = useState({
+        subject: '',
+        teacher: '',
+        date: '',
+        time: '',
+        reason: '',
+        alternativeArrangements: '',
+        priority: 'high',
+        notifyStudents: true,
+        notifyAdmin: true
+    });
 
     // Filter students in this class teacher's class
     const classStudents = useMemo(() =>
@@ -99,6 +117,8 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
         { id: 'attendanceManagement', label: 'Mark Attendance', icon: UserCheck },
         { id: 'progress', label: 'Student Progress', icon: TrendingUp },
         { id: 'communications', label: 'Communications', icon: MessageSquare },
+        { id: 'leaveManagement', label: 'Leave Management', icon: Calendar },
+        { id: 'lectureCancellation', label: 'Cancel Lecture', icon: AlertTriangle },
         { id: 'analytics', label: 'Analytics', icon: PieChart }
     ];
 
@@ -189,6 +209,64 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
         });
     };
 
+    // Lecture Cancellation Functions
+    const handleLectureCancellation = () => {
+        const newNotification = {
+            id: `notif-${Date.now()}`,
+            type: 'cancellation',
+            title: 'Lecture Cancelled',
+            message: `${lectureCancellationData.subject} lecture scheduled for ${lectureCancellationData.date} at ${lectureCancellationData.time} has been cancelled.`,
+            priority: lectureCancellationData.priority,
+            timestamp: new Date().toISOString(),
+            read: false,
+            details: {
+                subject: lectureCancellationData.subject,
+                teacher: lectureCancellationData.teacher,
+                date: lectureCancellationData.date,
+                time: lectureCancellationData.time,
+                reason: lectureCancellationData.reason,
+                alternativeArrangements: lectureCancellationData.alternativeArrangements
+            }
+        };
+
+        setNotifications([newNotification, ...notifications]);
+        
+        // Send notifications to students and admin (in real app, this would be API calls)
+        if (lectureCancellationData.notifyStudents) {
+            console.log('Notifying students about lecture cancellation:', newNotification);
+        }
+        if (lectureCancellationData.notifyAdmin) {
+            console.log('Notifying admin about lecture cancellation:', newNotification);
+        }
+
+        // Reset form and close modal
+        setLectureCancellationData({
+            subject: '',
+            teacher: '',
+            date: '',
+            time: '',
+            reason: '',
+            alternativeArrangements: '',
+            priority: 'high',
+            notifyStudents: true,
+            notifyAdmin: true
+        });
+        setShowLectureCancellationModal(false);
+
+        // Show success notification
+        alert('Lecture cancellation notification sent successfully!');
+    };
+
+    const handleMarkNotificationAsRead = (notificationId) => {
+        setNotifications(notifications.map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+        ));
+    };
+
+    const handleDismissNotification = (notificationId) => {
+        setNotifications(notifications.filter(n => n.id !== notificationId));
+    };
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -201,10 +279,23 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                         </p>
                         <p className="text-purple-200 text-sm mt-1">Welcome, {user.name}</p>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center">
-                        <GraduationCap className="w-12 h-12 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">{classStudents.length}</p>
-                        <p className="text-sm text-purple-100">Total Students</p>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setShowNotifications(true)}
+                            className="relative bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center hover:bg-white/30 transition-colors"
+                        >
+                            <Bell className="w-6 h-6" />
+                            {notifications.filter(n => !n.read).length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                    {notifications.filter(n => !n.read).length}
+                                </span>
+                            )}
+                        </button>
+                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center">
+                            <GraduationCap className="w-12 h-12 mx-auto mb-2" />
+                            <p className="text-2xl font-bold">{classStudents.length}</p>
+                            <p className="text-sm text-purple-100">Total Students</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -865,6 +956,27 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                     </motion.div>
                 )}
 
+                {activeTab === 'leaveManagement' && (
+                    <motion.div
+                        key="leaveManagement"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={{ duration: 0.3 }}
+                    >
+                        <TeacherLeaveManagement 
+                            user={user}
+                            teachers={teachers}
+                            subjects={subjects}
+                            onLeaveSubmit={(leaveRequest) => {
+                                console.log('Leave request submitted:', leaveRequest);
+                                // Handle leave request submission
+                            }}
+                        />
+                    </motion.div>
+                )}
+
             {/* Message Modal */}
             {showMessageModal && messageRecipient && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -926,13 +1038,211 @@ const ClassTeacherView = ({ user, students, teachers, subjects, attendanceRecord
                     </motion.div>
                 </div>
             )}
-            
+
+                {activeTab === 'lectureCancellation' && (
+                    <motion.div
+                        key="lectureCancellation"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={{ duration: 0.3 }}
+                    >
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                                Cancel Lecture Due to Teacher Absence
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Left Column - Basic Info */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Subject <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={lectureCancellationData.subject}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, subject: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        >
+                                            <option value="">Select Subject</option>
+                                            <option value="Computer Programming">Computer Programming</option>
+                                            <option value="Mathematics I">Mathematics I</option>
+                                            <option value="Digital Electronics">Digital Electronics</option>
+                                            <option value="Data Structures">Data Structures</option>
+                                            <option value="Web Development">Web Development</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Absent Teacher <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={lectureCancellationData.teacher}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, teacher: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        >
+                                            <option value="">Select Teacher</option>
+                                            {teachers.filter(t => t.role !== 'Class Teacher').map((teacher) => (
+                                                <option key={teacher.id} value={teacher.name}>
+                                                    {teacher.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Date of Lecture <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={lectureCancellationData.date}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, date: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Lecture Time <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={lectureCancellationData.time}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, time: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {/* Right Column - Details */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Reason for Cancellation <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={lectureCancellationData.reason}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, reason: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        >
+                                            <option value="">Select Reason</option>
+                                            <option value="Medical Emergency">Medical Emergency</option>
+                                            <option value="Personal Emergency">Personal Emergency</option>
+                                            <option value="Professional Development">Professional Development</option>
+                                            <option value="Unavoidable Circumstances">Unavoidable Circumstances</option>
+                                            <option value="Weather Conditions">Weather Conditions</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Alternative Arrangements
+                                        </label>
+                                        <textarea
+                                            value={lectureCancellationData.alternativeArrangements}
+                                            onChange={(e) => setLectureCancellationData({...lectureCancellationData, alternativeArrangements: e.target.value})}
+                                            rows={4}
+                                            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                                            placeholder="e.g., Lecture will be rescheduled to tomorrow, or Assignment will be posted online..."
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Priority Level
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {['high', 'medium', 'low'].map((priority) => (
+                                                <button
+                                                    key={priority}
+                                                    type="button"
+                                                    onClick={() => setLectureCancellationData({...lectureCancellationData, priority})}
+                                                    className={`py-2 px-4 rounded-lg font-medium text-sm transition-all ${
+                                                        lectureCancellationData.priority === priority
+                                                            ? priority === 'high' 
+                                                                ? 'bg-red-500 text-white' 
+                                                                : priority === 'medium'
+                                                                ? 'bg-orange-500 text-white'
+                                                                : 'bg-blue-500 text-white'
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                    }`}
+                                                >
+                                                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-3 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={lectureCancellationData.notifyStudents}
+                                                onChange={(e) => setLectureCancellationData({...lectureCancellationData, notifyStudents: e.target.checked})}
+                                                className="w-4 h-4 text-red-500 border-slate-300 rounded focus:ring-red-500"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                Notify all students via SMS/Email
+                                            </span>
+                                        </label>
+                                        
+                                        <label className="flex items-center gap-3 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={lectureCancellationData.notifyAdmin}
+                                                onChange={(e) => setLectureCancellationData({...lectureCancellationData, notifyAdmin: e.target.checked})}
+                                                className="w-4 h-4 text-red-500 border-slate-300 rounded focus:ring-red-500"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                Notify administration
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLectureCancellationModal(false)}
+                                    className="px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleLectureCancellation}
+                                    disabled={!lectureCancellationData.subject || !lectureCancellationData.teacher || !lectureCancellationData.date || !lectureCancellationData.time || !lectureCancellationData.reason}
+                                    className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center gap-2"
+                                >
+                                    <AlertTriangle className="w-4 h-4" />
+                                    Send Cancellation Notice
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
             </AnimatePresence>
             
             {/* Notice Board */}
             <div className="mt-8">
                 <NoticeBoardSimple userRole="classTeacher" />
             </div>
+            
+            {/* Notification Component */}
+            <LectureCancellationNotification
+                isOpen={showNotifications}
+                onClose={() => setShowNotifications(false)}
+                notifications={notifications}
+                onMarkAsRead={handleMarkNotificationAsRead}
+                onDismiss={handleDismissNotification}
+            />
         </div>
     );
 };

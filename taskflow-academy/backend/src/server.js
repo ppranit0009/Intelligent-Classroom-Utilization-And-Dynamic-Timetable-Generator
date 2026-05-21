@@ -11,6 +11,7 @@ const assignmentRoutes = require('./routes/assignments');
 const attendanceRoutes = require('./routes/attendance');
 const scheduleRoutes = require('./routes/schedules');
 const noticeRoutes = require('./routes/notices');
+const leaveRoutes = require('./routes/leave');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,7 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/notices', noticeRoutes);
+app.use('/api/leave', leaveRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

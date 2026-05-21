@@ -5,12 +5,22 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
-  "keywords": ["school", "portal", "http", "server"],
+  "keywords": [
+    "school",
+    "portal",
+    "http",
+    "server"
+  ],
   "author": "",
   "license": "ISC",
   "engines": {
     "node": ">=12.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.93.0"
   }
 }
